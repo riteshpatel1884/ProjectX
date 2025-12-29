@@ -1,0 +1,95 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum ExperienceLevel {
+  FRESHER
+  JUNIOR
+  MID
+  SENIOR
+}
+
+enum JobRole {
+  SDE
+  FRONTEND
+  BACKEND
+  FULLSTACK
+  DATA_ANALYST
+  DATA_SCIENTIST
+  ML_ENGINEER
+}
+
+enum SkillType {
+  DSA
+  WEB_DEVELOPMENT
+  SYSTEM_DESIGN
+  MACHINE_LEARNING
+  DATA_ANALYSIS
+  STATISTICS
+  SQL
+  PROJECTS
+}
+
+model User {
+  id      String @id @default(cuid())
+  clerkId String @unique
+
+  // Make these fields optional
+  fullName   String?
+  email      String?          @unique
+  experience ExperienceLevel?
+
+  totalPoints  Int     @default(0)
+  isSubscribed Boolean @default(false)
+
+  roles      UserRole[]
+  skills     SkillScore[]
+  dailyTasks DailyTask[]
+  
+  createdAt  DateTime     @default(now())
+  updatedAt  DateTime     @updatedAt
+}
+
+model UserRole {
+  id     String  @id @default(cuid())
+  userId String
+  role   JobRole
+  user   User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, role])
+}
+
+model SkillScore {
+  id     String    @id @default(cuid())
+  userId String
+  skill  SkillType
+  points Int       @default(0)
+  user   User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, skill])
+}
+
+
+model DailyTask {
+  id     String @id @default(cuid())
+  userId String
+
+  // STORE ALL 3 TASKS IN ONE COLUMN (JSON)
+  // Structure: [{ id: string, title: string, completed: boolean }]
+  tasks       Json     
+  
+  totalPoints Int      @default(0) // Points earned specifically on this day
+  
+  // Use this to check "Today" (12:00 AM logic)
+  date        DateTime @default(now()) // We will store just the date part ideally, or index on createdAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+}
